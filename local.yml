@@ -36,6 +36,7 @@
     - php-mysqlnd
     - php-odbc
     - npm
+    - python-mysqldb
 
   - name: Ensure nginx webroot
     file:
@@ -132,4 +133,69 @@
     - browserify
     - pm2
     - webpack
+
+  - name: Install Percona 5.7 apt repo
+    tags: hot
+    apt:
+      deb: https://repo.percona.com/apt/percona-release_0.1-4.xenial_all.deb
+
+  - name: Install databases and caching tiers
+    action: apt pkg={{item}} state=installed update_cache=yes
+    with_items:
+    - redis-server
+    - redis-tools
+    - memcached
+    - mongodb
+    - percona-server-server-5.7
+
+  - name: Ensure DB services are running and enabled
+    action: service name={{item}} state=started enabled=yes
+    with_items:
+    - redis
+    - mongodb
+    - memcached
+
+  - name: Ensure Mongo collection is created
+    shell: mongo --eval "db.createCollection('tdmongodb')"
+
+  - name: Generate percona random consistent password
+    tags: hot
+    copy:
+      dest: /root/.my.cnf
+      content: |
+        [client]
+        user=root
+        password={{ ansible_hostname | to_uuid }}
+
+  - name: Ensure root password is set
+    tags: hot
+    mysql_user:
+      name: root
+      password: "{{ ansible_hostname | to_uuid }}"
+      priv: '*.*:ALL,GRANT'
+      state: present
+
+  - name: Ensure DB tdmongodb exists
+    tags: hot
+    mysql_db:
+      name: tddatabase
+      state: present
+
+  - name: Ensure tdro user exists and readonly
+    tags: hot
+    mysql_user:
+      name: tdro
+      login_password: "{{ ansible_hostname | to_uuid }}"
+      password: "readOnlyP@ss"
+      priv: 'tddatabase.*:SELECT'
+      state: present
+
+  - name: Ensure tdrw user exists and readwrite
+    tags: hot
+    mysql_user:
+      name: tdrw
+      login_password: "{{ ansible_hostname | to_uuid }}"
+      password: "someComPl3xP@ssw0rd"
+      priv: 'tddatabase.*:ALL'
+      state: present
 
