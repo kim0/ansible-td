@@ -35,6 +35,7 @@
     - php-mysqli
     - php-mysqlnd
     - php-odbc
+    - npm
 
   - name: Ensure nginx webroot
     file:
@@ -112,3 +113,23 @@
       regexp: '^session.save_path ='
       insertafter: '^session.save_handler'
       line: "session.save_path = 'tcp://10.1.1.1:11211'"
+
+  - name: Ensure nodejs is linked to node
+    file:
+      path: /usr/bin/node
+      state: link
+      src: /usr/bin/nodejs
+
+  - name: Install nodejs modules
+    action: npm name={{item}} state=present global=yes
+    with_items:
+    - gulp
+    - grunt
+    - nvm
+    - bower
+    - yo
+    - browser-sync
+    - browserify
+    - pm2
+    - webpack
+
