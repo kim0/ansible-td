@@ -115,6 +115,12 @@
       insertafter: '^session.save_handler'
       line: "session.save_path = 'tcp://10.1.1.1:11211'"
 
+  - name: Configure php.ini display_errors
+    lineinfile:
+      path: /etc/php/7.0/fpm/php.ini
+      regexp: '^display_errors ='
+      line: "display_errors = On"
+
   - name: Ensure nodejs is linked to node
     file:
       path: /usr/bin/node
@@ -135,7 +141,6 @@
     - webpack
 
   - name: Install Percona 5.7 apt repo
-    tags: hot
     apt:
       deb: https://repo.percona.com/apt/percona-release_0.1-4.xenial_all.deb
 
@@ -159,7 +164,6 @@
     shell: mongo --eval "db.createCollection('tdmongodb')"
 
   - name: Generate percona random consistent password
-    tags: hot
     copy:
       dest: /root/.my.cnf
       content: |
@@ -168,7 +172,6 @@
         password={{ ansible_hostname | to_uuid }}
 
   - name: Ensure root password is set
-    tags: hot
     mysql_user:
       name: root
       password: "{{ ansible_hostname | to_uuid }}"
@@ -176,13 +179,11 @@
       state: present
 
   - name: Ensure DB tdmongodb exists
-    tags: hot
     mysql_db:
       name: tddatabase
       state: present
 
   - name: Ensure tdro user exists and readonly
-    tags: hot
     mysql_user:
       name: tdro
       login_password: "{{ ansible_hostname | to_uuid }}"
@@ -191,7 +192,6 @@
       state: present
 
   - name: Ensure tdrw user exists and readwrite
-    tags: hot
     mysql_user:
       name: tdrw
       login_password: "{{ ansible_hostname | to_uuid }}"
