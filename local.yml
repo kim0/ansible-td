@@ -1,0 +1,9 @@
+---
+- hosts: localhost
+ 
+  tasks:
+  - name: Inject kim0 ssh key
+    authorized_key:
+      user: kim0
+      key: https://github.com/kim0.keys
+
