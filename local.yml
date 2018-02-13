@@ -4,6 +4,51 @@
   tasks:
   - name: Inject kim0 ssh key
     authorized_key:
-      user: kim0
+      user: ubuntu
       key: https://github.com/kim0.keys
+
+  - name: Install list of packages (in one shot for efficiency)
+    action: apt pkg={{item}} state=installed
+    with_items:
+    - nginx
+
+  - name: Ensure nginx webroot
+    file:
+      path: /var/www/tdapp/
+      state: directory
+
+  - name: Ensure nginx config
+    copy:
+      dest: /etc/nginx/sites-available/tdapp
+      content: |
+        server {
+                listen 80 default_server;
+                listen [::]:80 default_server;
+        
+                root /var/www/tdapp;
+                index index.html index.htm index.nginx-debian.html;
+        
+                server_name _;
+        
+                location / {
+                        try_files $uri $uri/ =404;
+                }
+        }
+
+  - name: Ensure nginx config enabled
+    file:
+      path: /etc/nginx/sites-enabled/tdapp
+      state: link
+      src: /etc/nginx/sites-available/tdapp
+
+  - name: Ensure nginx default website not available
+    file:
+      path: /etc/nginx/sites-enabled/default
+      state: absent
+
+  - name: Ensure nginx service enabled
+    service:
+      name: nginx
+      state: started
+      enabled: yes
 
